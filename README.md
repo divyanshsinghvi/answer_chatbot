@@ -334,20 +334,8 @@ EquiChat intelligently routes queries to the appropriate data source:
 
 ### Performance Optimization
 
-1. **Use Caching Aggressively**
-   ```bash
-   # Cache extractions to avoid re-processing
-   python scripts/ingest_batch.py --cache-dir ./cache
-   ```
 
-2. **Optimize Database**
-   ```sql
-   -- Run in DuckDB CLI
-   VACUUM;
-   ANALYZE;
-   ```
-
-3. **Parallel Processing**
+1. **Parallel Processing**
    ```bash
    # Increase workers for CPU-bound tasks
    python scripts/ingest_batch.py --workers 8
