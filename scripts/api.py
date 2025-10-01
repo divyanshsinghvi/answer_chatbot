@@ -120,11 +120,17 @@ async def ingest_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}")
 
+from equichat.router_llm import query_with_llm_router
 @app.post("/query")
 def query_endpoint(req: QueryRequest, store: Store = Depends(get_store)):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    result = router_llm.query_with_llm_router(client, req.query, store.conn)
-    return result
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+    # Use the same connection from Store
+    conn = store.conn  
+
+    res = query_with_llm_router(client, req.query, conn, model=model)
+    return JSONResponse(content=res)
 
 @app.get("/chat/stream")
 def chat_stream(
