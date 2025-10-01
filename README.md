@@ -301,16 +301,8 @@ EquiChat intelligently routes queries to the appropriate data source:
 ### Supported Query Types
 
 #### Structured Data (DuckDB)
-- **Single Company Metrics**: "What is Hindalco's revenue in FY24?"
-- **Industry Comparisons**: "Top 5 banks by market cap"
-- **Complex Aggregations**: "Banks with revenue growth > 10% and P/E < 15"
-- **Trend Analysis**: "Revenue growth trends for Hindalco"
 
 #### Semantic Search (FAISS)
-- **Explanatory Questions**: "Why did margins improve?"
-- **Risk Analysis**: "What are the key risks mentioned?"
-- **Strategy Questions**: "What is the company's expansion plan?"
-- **Qualitative Insights**: "How does management view market conditions?"
 
 ## 🐛 Troubleshooting
 
