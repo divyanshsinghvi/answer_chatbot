@@ -264,24 +264,6 @@ CUSTOM_METRICS = {
 }
 ```
 
-### Industry Entity Mapping
-
-Create `data/entities.csv` for industry classification:
-```csv
-company,industry,ticker
-Hindalco Industries,Metals & Mining,HINDALCO
-HDFC Bank,Banking,HDFCBANK
-Sun Pharma,Pharmaceuticals,SUNPHARMA
-```
-
-### Batch Processing with Ray (Optional)
-
-For large-scale processing:
-```bash
-# Enable Ray for parallel processing
-EQUICHAT_ENABLE_RAY=true python scripts/ingest_batch.py --workers 10
-```
-
 ## 🔍 Dual Query System
 
 EquiChat intelligently routes queries to the appropriate data source:
