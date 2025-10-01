@@ -391,10 +391,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Rich for beautiful CLI interfaces
 - OpenAI/Cluade/Gemini for patches to the code
 
-## 📞 Support
-
-- **Issues**: [GitHub Issues](../../issues)
-- **Discussions**: [GitHub Discussions](../../discussions)
-- **Documentation**: [Wiki](../../wiki)
 
 ---
