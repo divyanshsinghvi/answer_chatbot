@@ -2,6 +2,9 @@
 
 **EquiChat** is a sophisticated financial document analysis system that extracts comprehensive metrics from equity research reports and financial PDFs using OpenAI's advanced language models. Built for scalability and accuracy, it provides both programmatic APIs and an interactive chat interface for querying financial data.
 
+![Chat Interface](assets/chatbot.jpg)
+
+
 ## 🚀 Features
 
 ### Core Capabilities
@@ -174,7 +177,6 @@ python scripts/chat.py
 # Query using LLM router (recommended for testing)
 uv run python scripts/query_llm.py "What are all the companies in bangalore?"
 ```
-![Chat Interface](assets/chatbot.jpg)
 
 ### REST API
 
