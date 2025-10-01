@@ -73,6 +73,26 @@ def _shutdown():
         except Exception:
             pass
 
+def condense_context(messages: list[dict], max_chars: int = 1500) -> str:
+    """
+    Turn full message history into a compact text block:
+    user: ...
+    assistant: ...
+    Keeps only the last ~max_chars.
+    """
+    lines: list[str] = []
+    for m in messages:
+        role = m.get("role","user")
+        content = (m.get("content") or "").strip()
+        if not content:
+            continue
+        lines.append(f"{role}: {content}")
+    blob = "\n".join(lines)
+    if len(blob) > max_chars:
+        return blob[-max_chars:]
+    return blob
+
+
 # Dependency to access the store safely
 def get_store(request: Request) -> Store:
     return request.app.state.store
@@ -120,17 +140,40 @@ async def ingest_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}")
 
+from typing import List, Dict, Optional
+from pydantic import BaseModel, Field
+
+class QueryRequest(BaseModel):
+    messages: List[Dict[str, str]] = Field(..., description="Rolling chat history")
+    # optional hints you may add later
+    company: Optional[str] = None
+    industry: Optional[str] = None
+
 from equichat.router_llm import query_with_llm_router
+
+
 @app.post("/query")
 def query_endpoint(req: QueryRequest, store: Store = Depends(get_store)):
+    # 1) pull latest user query
+    query = ""
+    for m in reversed(req.messages):
+        if (m.get("role") or "").lower() == "user":
+            query = (m.get("content") or "").strip()
+            break
+    if not query:
+        return JSONResponse(status_code=400, content={"detail": "No user query found in messages."})
+
+    # 2) build a short context string from history
+    context = condense_context(req.messages)
+
+    # 3) call LLM router with same DB connection
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    res = query_with_llm_router(client, query, store.conn, model=model, context=context)
 
-    # Use the same connection from Store
-    conn = store.conn  
+    # 4) return normalized schema (tool/sql/rows/answer)
+    return res
 
-    res = query_with_llm_router(client, req.query, conn, model=model)
-    return JSONResponse(content=res)
 
 @app.get("/chat/stream")
 def chat_stream(

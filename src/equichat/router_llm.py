@@ -129,12 +129,13 @@ def _rows_to_text_vector(rows: List[Dict[str, Any]]) -> str:
 
 # =============================== FACTS PATH ===================================
 
-def classify_intent(client: OpenAI, query: str, model: str = "gpt-4o-mini") -> str:
+def classify_intent(client: OpenAI, query: str, model: str = "gpt-4o-mini", context: str | None = None) -> str:
+    user_payload = f"Conversation context:\n{context}\n\nUser question:\n{query}" if context else query
     resp = client.responses.create(
         model=model,
         input=[
             {"role": "system", "content": SYSTEM_CLASSIFY},
-            {"role": "user", "content": query},
+            {"role": "user", "content": user_payload},
         ],
         max_output_tokens=80,
     )
@@ -150,12 +151,13 @@ def classify_intent(client: OpenAI, query: str, model: str = "gpt-4o-mini") -> s
     return tool
 
 
-def generate_sql_facts(client: OpenAI, query: str, model: str = "gpt-4o-mini") -> str:
+def generate_sql_facts(client: OpenAI, query: str, model: str = "gpt-4o-mini", context: str | None = None) -> str:
+    user_payload = f"Context:\n{context}\n\nQuestion:\n{query}" if context else query
     resp = client.responses.create(
         model=model,
         input=[
             {"role": "system", "content": SYSTEM_SQL_FACTS},
-            {"role": "user", "content": query},
+            {"role": "user", "content": user_payload},
         ],
         max_output_tokens=400,
     )
@@ -184,13 +186,14 @@ def run_sql(conn: duckdb.DuckDBPyConnection, sql: str) -> List[Tuple[Any]]:
             return []
 
 
-def answer_from_facts(client: OpenAI, query: str, rows: List[Tuple[Any]], model: str = "gpt-4o-mini") -> str:
+def answer_from_facts(client: OpenAI, query: str, rows: List[Tuple[Any]], model: str = "gpt-4o-mini", context: str | None = None) -> str:
     rows_text = _rows_to_text_facts(rows)
+    user_payload = f"Context:\n{context}\n\nQuestion:\n{query}\nRows:\n{rows_text}" if context else f"Question:\n{query}\nRows:\n{rows_text}"
     resp = client.responses.create(
         model=model,
         input=[
             {"role": "system", "content": SYSTEM_ANSWER_FACTS},
-            {"role": "user", "content": f"Question: {query}\nRows:\n{rows_text}"},
+            {"role": "user", "content": user_payload},
         ],
         max_output_tokens=300,
     )
@@ -246,18 +249,18 @@ def embed_query(client: OpenAI, text: str, model: str = "text-embedding-3-large"
     return emb
 
 
-def answer_from_vector(client: OpenAI, query: str, rows: List[Dict[str, Any]], model: str = "gpt-4o-mini") -> str:
+def answer_from_vector(client: OpenAI, query: str, rows: List[Dict[str, Any]], model: str = "gpt-4o-mini", context: str | None = None) -> str:
     rows_text = _rows_to_text_vector(rows)
+    user_payload = f"Context:\n{context}\n\nQuestion:\n{query}\nRows:\n{rows_text}" if context else f"Question:\n{query}\nRows:\n{rows_text}"
     resp = client.responses.create(
         model=model,
         input=[
             {"role": "system", "content": SYSTEM_ANSWER_VECTOR},
-            {"role": "user", "content": f"Query: {query}\nRows:\n{rows_text}"},
+            {"role": "user", "content": user_payload},
         ],
         max_output_tokens=350,
     )
     return getattr(resp, "output_text", "").strip()
-
 
 # =============================== PUBLIC API ===================================
 
@@ -269,6 +272,7 @@ def query_with_llm_router(
     vec_folder: str = "data/vec_index",
     k: int = 5,
     fallback_to_vector_if_empty: bool = True,
+    context: str | None = None,
 ) -> Dict[str, Any]:
     """
     End-to-end:
@@ -279,16 +283,15 @@ def query_with_llm_router(
 
     Returns: {"tool": str, "sql": Optional[str], "rows": list, "answer": str}
     """
-    tool = classify_intent(client, query, model=model)
+    tool = classify_intent(client, query, model=model, context=context)
 
     if tool == "facts":
-        sql = generate_sql_facts(client, query, model=model)
+        sql = generate_sql_facts(client, query, model=model, context=context)
         rows = run_sql(conn, sql)
         if not rows and fallback_to_vector_if_empty:
-            # try semantic search as fallback
             tool = "vector"
         else:
-            answer = answer_from_facts(client, query, rows, model=model)
+            answer = answer_from_facts(client, query, rows, model=model, context=context)
             return {"tool": "facts", "sql": sql, "rows": rows, "answer": answer}
 
     # vector route
@@ -297,5 +300,5 @@ def query_with_llm_router(
     q_emb = embed_query(client, query)
     retriever = VectorIndex(vec_folder)
     vrows = retriever.search(q_emb, k=k)
-    answer = answer_from_vector(client, query, vrows, model=model)
+    answer = answer_from_vector(client, query, vrows, model=model, context=context)
     return {"tool": "vector", "sql": None, "rows": vrows, "answer": answer}
