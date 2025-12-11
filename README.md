@@ -264,6 +264,25 @@ CUSTOM_METRICS = {
 }
 ```
 
+
+### Industry Entity Mapping
+
+Create `data/entities.csv` for industry classification:
+```csv
+company,industry,ticker
+Hindalco Industries,Metals & Mining,HINDALCO
+HDFC Bank,Banking,HDFCBANK
+Sun Pharma,Pharmaceuticals,SUNPHARMA
+```
+
+### Batch Processing with Ray (Optional)
+
+For large-scale processing:
+```bash
+# Enable Ray for parallel processing
+EQUICHAT_ENABLE_RAY=true python scripts/ingest_batch.py --workers 10
+```
+
 ## 🔍 Dual Query System
 
 EquiChat intelligently routes queries to the appropriate data source:
@@ -284,7 +303,17 @@ EquiChat intelligently routes queries to the appropriate data source:
 
 #### Structured Data (DuckDB)
 
+- **Single Company Metrics**: "What is Hindalco's revenue in FY24?"
+- **Industry Comparisons**: "Top 5 banks by market cap"
+- **Complex Aggregations**: "Banks with revenue growth > 10% and P/E < 15"
+- **Trend Analysis**: "Revenue growth trends for Hindalco"
+
 #### Semantic Search (FAISS)
+- **Explanatory Questions**: "Why did margins improve?"
+- **Risk Analysis**: "What are the key risks mentioned?"
+- **Strategy Questions**: "What is the company's expansion plan?"
+- **Qualitative Insights**: "How does management view market conditions?"
+
 
 ## 🐛 Troubleshooting
 
@@ -317,7 +346,20 @@ EquiChat intelligently routes queries to the appropriate data source:
 ### Performance Optimization
 
 
-1. **Parallel Processing**
+1. **Use Caching Aggressively**
+   ```bash
+   # Cache extractions to avoid re-processing
+   python scripts/ingest_batch.py --cache-dir ./cache
+   ```
+
+2. **Optimize Database**
+   ```sql
+   -- Run in DuckDB CLI
+   VACUUM;
+   ANALYZE;
+   ```
+
+3. **Parallel Processing**
    ```bash
    # Increase workers for CPU-bound tasks
    python scripts/ingest_batch.py --workers 8
@@ -353,5 +395,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Rich for beautiful CLI interfaces
 - OpenAI/Cluade/Gemini for patches to the code
 
+## 📞 Support
+
+- **Issues**: [GitHub Issues](../../issues)
+- **Discussions**: [GitHub Discussions](../../discussions)
+- **Documentation**: [Wiki](../../wiki)
 
 ---
